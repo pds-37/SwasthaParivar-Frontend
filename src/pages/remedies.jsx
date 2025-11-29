@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 
 import "./remedies.css";
-import REMEDIES_DATA from "../data/Remedies";
+import REMEDIES_DATA from "../data/remedies";
 import api from "../lib/api"; 
 
 const PAGE_SIZE = 8;
