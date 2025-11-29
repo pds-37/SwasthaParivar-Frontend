@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import ReminderCard from "../components/ReminderCard";
 import CreateReminder from "../components/CreateReminder";
 import toast from "react-hot-toast";
-import "./remedies.css";
 
 const GROUPS = {
   TODAY: "Today",
