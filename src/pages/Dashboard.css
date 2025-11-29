@@ -1,0 +1,993 @@
+/* ============================================================
+   V3 ULTRA - PREMIUM CSS PACK
+   (Glass + Physics Animations + Page Transitions + Drawer)
+   Paste into Dashboard.css
+   ============================================================ */
+
+/* -------------------------
+   Root / vars
+   ------------------------- */
+:root{
+  --bg: #f6f9fb;
+  --card-bg: rgba(255,255,255,0.6);
+  --muted: #64748b;
+  --accent: #2563eb;
+  --accent-2: #10b981;
+  --glass-border: rgba(255,255,255,0.35);
+  --text: #0f172a;
+  --surface-shadow: 0 10px 30px rgba(2,6,23,0.08);
+  --ease: cubic-bezier(.16,.84,.32,1);
+  --drawer-w: 360px;
+}
+
+/* DARK THEME (apply to root or container with data-theme="dark") */
+[data-theme="dark"]{
+  --bg: #0f1113;
+  --card-bg: rgba(20,20,20,0.58);
+  --muted: #9fb0d6;
+  --accent: #60a5fa;
+  --accent-2: #34d399;
+  --glass-border: rgba(255,255,255,0.08);
+  --text: #d8e3ff;
+  --surface-shadow: 0 12px 40px rgba(0,0,0,0.5);
+}
+
+/* page background */
+body {
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  min-height:100vh;
+  transition: background 360ms var(--ease), color 360ms var(--ease);
+}
+
+/* -------------------------
+   Layout containers
+   ------------------------- */
+.dashboard-container {
+  max-width: 1250px;
+  margin: 0 auto;
+  padding: 0 1rem 4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+/* mobile */
+@media (max-width: 900px){
+  .two-col { grid-template-columns: 1fr; gap: 1.25rem; }
+  .dashboard-container { padding-bottom: 3rem; }
+}
+
+/* -------------------------
+   Hero / parallax
+   ------------------------- */
+.hero-parallax {
+  position: relative;
+  overflow: visible;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  transform-origin: center;
+  animation: heroEntrance 850ms var(--ease) both;
+}
+
+@keyframes heroEntrance {
+  from { opacity: 0; transform: translateY(-12px) scale(0.995); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* subtle diagonal sheen overlay for hero */
+.hero-parallax::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background: linear-gradient(135deg, rgba(255,255,255,0.02), rgba(255,255,255,0.0) 40%);
+  mix-blend-mode: overlay;
+}
+
+/* -------------------------
+   Glass card base
+   ------------------------- */
+.glass-card{
+  position: relative;
+  border-radius: 18px;
+  padding: 1.7rem;
+  background: var(--card-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--surface-shadow);
+  overflow: hidden;
+  transition: transform 340ms var(--ease), box-shadow 340ms var(--ease), border-color 340ms var(--ease);
+  will-change: transform;
+  transform-origin: center;
+}
+
+/* subtle inner soft vignette for depth */
+.glass-card::before{
+  content: "";
+  position: absolute;
+  inset: -30%;
+  background: radial-gradient(closest-side, rgba(255,255,255,0.02), rgba(0,0,0,0));
+  pointer-events: none;
+  opacity: 0.6;
+  transform: translateY(-10%);
+}
+
+/* shine sweep */
+.glass-card::after{
+  content:"";
+  position:absolute;
+  top:-120%;
+  left:-120%;
+  width:250%;
+  height:250%;
+  background: linear-gradient(110deg, transparent, rgba(255,255,255,0.09), transparent);
+  transform: rotate(25deg);
+  opacity:0;
+  transition: top 700ms var(--ease), opacity 420ms var(--ease);
+}
+
+/* physics hover: soft spring + tilt */
+@media (hover: hover){
+  .glass-card:hover{
+    transform: perspective(900px) translateZ(0) rotateX(2deg) rotateY(-2deg) scale(1.015);
+    box-shadow: 0 20px 50px rgba(2,6,23,0.28);
+    border-color: rgba(255,255,255,0.45);
+  }
+  .glass-card:hover::after{ top: 120%; opacity: 1; }
+}
+
+/* entrance animation (staggered via JS or order of DOM) */
+.glass-card { opacity:0; transform: translateY(12px) scale(0.997); animation: cardFade 560ms var(--ease) forwards; }
+@keyframes cardFade {
+  to { opacity:1; transform: translateY(0) scale(1); }
+}
+
+/* slight scale/float for pointer interaction on avatar/button hover */
+.MuiAvatar-root, .MuiButton-root { transition: transform 240ms var(--ease), box-shadow 240ms var(--ease); }
+.MuiAvatar-root:hover { transform: translateY(-4px) scale(1.08); box-shadow: 0 6px 20px rgba(0,0,0,0.18); }
+.MuiButton-root:hover { transform: translateY(-2px); }
+
+/* -------------------------
+   Card header: centered & aligned
+   ------------------------- */
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.4rem;
+}
+
+/* header left (title) -> keep centered with icon baseline */
+.section-title{
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 1.18rem;
+  font-weight: 700;
+  color: var(--text);
+  margin:0;
+}
+
+/* header badges (right) */
+.header-badges{
+  display:flex;
+  align-items:center;
+  gap:0.6rem;
+}
+
+/* small subtitle */
+.section-subtitle{
+  display:block;
+  color:var(--muted);
+  font-size:0.9rem;
+  margin-top:5px;
+}
+
+/* mini section title for sub-lists */
+.section-mini-title{
+  margin-top: 0.6rem;
+  margin-bottom: 0.6rem;
+  font-weight:700;
+  color:var(--text);
+}
+
+/* -------------------------
+   Divider
+   ------------------------- */
+.divider{
+  height:1px;
+  background: linear-gradient(to right, rgba(255,255,255,0.03), rgba(0,0,0,0.08) 40%, rgba(255,255,255,0.02));
+  margin: 1rem 0;
+  border-radius: 2px;
+}
+
+/* -------------------------
+   List styles + stagger
+   ------------------------- */
+.MuiList-root { padding-top: 0 !important; }
+
+.MuiListItem-root{
+  border-radius: 10px;
+  margin-bottom: 0.55rem;
+  display:flex;
+  align-items:center;
+  gap:0.8rem;
+  padding: 0.55rem 0.2rem;
+  transition: background 220ms var(--ease), transform 260ms var(--ease);
+  will-change: transform, opacity;
+  opacity: 0;
+  transform: translateX(-12px);
+  animation: listPop 420ms var(--ease) forwards;
+}
+
+/* small enter staggering (CSS-only) */
+.MuiListItem-root:nth-child(1){ animation-delay: 60ms; }
+.MuiListItem-root:nth-child(2){ animation-delay: 110ms; }
+.MuiListItem-root:nth-child(3){ animation-delay: 160ms; }
+.MuiListItem-root:nth-child(4){ animation-delay: 210ms; }
+
+@keyframes listPop {
+  to { opacity:1; transform: translateX(0); }
+}
+
+/* hover highlight for list children */
+.MuiListItem-root:hover { background: rgba(37,99,235,0.04); }
+
+[data-theme="dark"] .MuiListItem-root:hover { background: rgba(255,255,255,0.02); }
+
+/* avatar baseline */
+.MuiAvatar-root {
+  width:44px; height:44px; font-weight:700;
+  box-shadow: 0 2px 10px rgba(2,6,23,0.06);
+}
+
+/* -------------------------
+   Buttons & Chips
+   ------------------------- */
+.MuiButton-root{
+  text-transform:none !important;
+  border-radius:10px !important;
+  font-weight:600 !important;
+  letter-spacing:0.2px;
+}
+
+/* outline hover glow */
+.MuiButton-root:hover{ box-shadow: 0 6px 22px rgba(37,99,235,0.12) !important; }
+
+/* chips */
+.MuiChip-root { font-weight:700 !important; border-radius: 999px !important; padding: 6px 10px; }
+
+/* -------------------------
+   Inputs / AI box
+   ------------------------- */
+.MuiTextField-root input:focus{
+  outline:none;
+  box-shadow: 0 4px 28px rgba(37,99,235,0.12);
+  border-radius: 8px;
+  transition: box-shadow 240ms var(--ease);
+}
+
+/* ai response */
+.ai-response{
+  margin-top: 0.9rem;
+  padding: 0.9rem;
+  border-radius:10px;
+  border-left: 4px solid var(--accent);
+  background: rgba(255,255,255,0.6);
+  animation: expandBox 420ms cubic-bezier(.2,.8,.24,1);
+}
+[data-theme="dark"] .ai-response{ background: rgba(40,40,40,0.46); }
+
+/* expand */
+@keyframes expandBox {
+  from { opacity:0; transform: scale(.992) translateY(6px); }
+  to   { opacity:1; transform: scale(1) translateY(0); }
+}
+
+/* -------------------------
+   Skeleton loader polish
+   ------------------------- */
+.MuiSkeleton-root { border-radius:6px !important; }
+.MuiSkeleton-rectangular, .MuiSkeleton-text { background: linear-gradient(90deg, rgba(0,0,0,0.06), rgba(0,0,0,0.03), rgba(0,0,0,0.06)); }
+[data-theme="dark"] .MuiSkeleton-rectangular { background: linear-gradient(90deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01), rgba(255,255,255,0.03)); }
+
+/* -------------------------
+   Premium Notification Drawer (panel + backdrop)
+   ------------------------- */
+.drawer-backdrop{
+  position: fixed;
+  inset: 0;
+  background: rgba(2,6,23,0.45);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 2500;
+  animation: fadeInset 180ms ease;
+}
+
+@keyframes fadeInset {
+  from { opacity:0; }
+  to { opacity:1; }
+}
+
+.drawer-panel{
+  position: fixed;
+  right: 20px;
+  top: 72px;
+  width: var(--drawer-w);
+  max-width: calc(100% - 40px);
+  height: calc(100vh - 120px);
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+  border: 1px solid rgba(255,255,255,0.06);
+  box-shadow: 0 30px 70px rgba(2,6,23,0.6);
+  z-index: 2600;
+  overflow: hidden;
+  display:flex;
+  flex-direction:column;
+  animation: drawerIn 360ms cubic-bezier(.2,.9,.26,1);
+}
+
+[data-theme="dark"] .drawer-panel{
+  background: linear-gradient(180deg, rgba(18,18,18,0.9), rgba(20,20,20,0.95));
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+@keyframes drawerIn {
+  from { transform: translateY(8px) translateX(12px) scale(.995); opacity:0; }
+  to { transform: translateY(0) translateX(0) scale(1); opacity:1; }
+}
+
+.drawer-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  gap: 12px;
+}
+
+.drawer-header h3{
+  margin:0;
+  font-size:1.05rem;
+  color:var(--text);
+}
+
+.drawer-close{
+  appearance:none;
+  border:0;
+  background:transparent;
+  color:var(--muted);
+  font-size:20px;
+  line-height:1;
+  cursor:pointer;
+  padding:6px;
+  border-radius:8px;
+}
+.drawer-close:hover{ background: rgba(0,0,0,0.06); color:var(--text); }
+
+.drawer-content{
+  padding: 10px;
+  overflow:auto;
+  flex:1;
+}
+
+/* drawer list item */
+.drawer-item{
+  border-radius:10px;
+  padding:8px;
+  transition: background 200ms var(--ease);
+}
+.drawer-item:hover{ background: rgba(37,99,235,0.03); }
+[data-theme="dark"] .drawer-item:hover{ background: rgba(255,255,255,0.02); }
+
+.drawer-empty{
+  text-align:center;
+  color:var(--muted);
+  padding: 28px 10px;
+}
+
+/* -------------------------
+   Accessibility + focus
+   ------------------------- */
+button:focus, a:focus, .MuiButton-root:focus {
+  outline: 3px solid rgba(37,99,235,0.14);
+  outline-offset: 3px;
+  border-radius: 8px;
+}
+
+/* -------------------------
+   Page transitions (route-level)
+   ------------------------- */
+.route-fade-enter { opacity:0; transform: translateY(6px) scale(.998); }
+.route-fade-enter-active { opacity:1; transform: translateY(0); transition: all 420ms var(--ease); }
+.route-fade-exit { opacity:1; transform: translateY(0); }
+.route-fade-exit-active { opacity:0; transform: translateY(6px); transition: all 320ms var(--ease); }
+
+/* -------------------------
+   Mobile tweaks
+   ------------------------- */
+@media (max-width:600px){
+  .dashboard-container { padding: 0 0.9rem 3rem; }
+  .glass-card { padding: 1.1rem; border-radius:12px; }
+  .section-title { font-size: 1.04rem; }
+  .drawer-panel { right: 10px; top: 68px; width: calc(100% - 20px); height: calc(100vh - 98px); }
+}
+
+/* -------------------------
+   Tiny visual fixes
+   ------------------------- */
+.MuiListItemText-primary { color: var(--text); font-size: 1rem; }
+.MuiListItemText-secondary { color: var(--muted); font-size: 0.9rem; margin-top: 3px; }
+[data-theme="dark"] .MuiListItemText-secondary { color: rgba(216,227,255,0.72); }
+
+/* final: ensure icons inherit visible color in dark */
+[data-theme="dark"] svg { stroke: currentColor; color: var(--text); }
+
+/* end of V3 Ultra CSS pack */
+/* ============================================================
+   V3 ULTRA — TYPOGRAPHY UPGRADE PATCH (Final Enhancement)
+   Makes card titles/subtitles sharper and more premium.
+   ============================================================ */
+
+/* --------------------------
+   CARD TITLES
+   -------------------------- */
+.section-title {
+  font-size: 1.22rem;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  color: var(--text);
+  text-shadow: 0 1px 0 rgba(255,255,255,0.4);
+}
+
+/* Dark: glowing crisp neon-blue white */
+[data-theme="dark"] .section-title {
+  color: #e9f3ff !important;
+  text-shadow: 0 0 6px rgba(126,176,255,0.32), 0 0 2px rgba(255,255,255,0.15);
+}
+
+/* --------------------------
+   SUBTITLES
+   -------------------------- */
+.section-subtitle {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--muted);
+  opacity: 0.95;
+}
+
+/* dark mode subtle cyan tint */
+[data-theme="dark"] .section-subtitle {
+  color: rgba(205,225,255,0.8) !important;
+}
+
+/* --------------------------
+   MINI TITLES (Who needs attention, etc.)
+   -------------------------- */
+.section-mini-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: 0.15px;
+}
+
+/* Glow in dark */
+[data-theme="dark"] .section-mini-title {
+  color: #f3f7ff !important;
+  text-shadow: 0 0 4px rgba(255,255,255,0.15);
+}
+
+/* --------------------------
+   LIST ITEM PRIMARY TEXT
+   -------------------------- */
+.MuiListItemText-primary {
+  font-size: 1.04rem !important;
+  font-weight: 700 !important;
+  color: var(--text) !important;
+  opacity: 0.98;
+}
+
+/* dark */
+[data-theme="dark"] .MuiListItemText-primary {
+  color: #f5f9ff !important;
+}
+
+/* --------------------------
+   LIST ITEM SECONDARY TEXT
+   -------------------------- */
+.MuiListItemText-secondary {
+  font-size: 0.88rem !important;
+  color: var(--muted) !important;
+}
+
+/* dark secondary cyan-gray */
+[data-theme="dark"] .MuiListItemText-secondary {
+  color: rgba(195,215,245,0.78) !important;
+}
+
+/* --------------------------
+   BUTTON TEXT
+   -------------------------- */
+.MuiButton-root {
+  font-weight: 700 !important;
+  letter-spacing: 0.3px;
+}
+
+/* dark: bright premium blue */
+[data-theme="dark"] .MuiButton-root {
+  color: #7cc0ff !important;
+}
+/* ============================================================
+   FINAL PATCH — Crystal HDR Card Titles (Always Visible)
+   ============================================================ */
+
+/* Main card titles */
+.section-title {
+  color: var(--text) !important;
+  font-size: 1.28rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.25px;
+  opacity: 1 !important;
+  text-shadow:
+    0 0 6px rgba(0,0,0,0.35),
+    0 1px 1px rgba(0,0,0,0.4);
+}
+
+/* DARK MODE → bright but not over-glowy */
+[data-theme="dark"] .section-title {
+  color: #f6f9ff !important;
+  text-shadow:
+    0 0 10px rgba(80,150,255,0.32),
+    0 0 3px rgba(255,255,255,0.2),
+    0 1px 1px rgba(0,0,0,0.6);
+}
+
+/* Subtitles below titles */
+.section-subtitle {
+  color: var(--muted) !important;
+  opacity: 0.95;
+  font-weight: 500;
+}
+
+/* DARK MODE subtitle fix */
+[data-theme="dark"] .section-subtitle {
+  color: rgba(205,225,255,0.85) !important;
+}
+
+/* Icon next to title */
+.section-title svg {
+  stroke-width: 2.5px !important;
+  opacity: 1 !important;
+  color: var(--accent) !important;
+}
+
+/* DARK icons → premium cyan/blue gradient look */
+[data-theme="dark"] .section-title svg {
+  color: #7cc0ff !important;
+  filter: drop-shadow(0 0 4px rgba(126,176,255,0.35));
+}
+
+/* Tighten alignment */
+.card-header, .section-title {
+  display: flex !important;
+  align-items: center !important;
+}
+/* ============================================================
+   FINAL THEME TEXT FIX (Light = Dark text, Dark = Light text)
+   ============================================================ */
+
+/* ---------- MAIN CARD TITLES ---------- */
+.section-title {
+  color: var(--text) !important;     /* light → dark text | dark → light text */
+  font-size: 1.28rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.25px;
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+
+/* Dark theme - slightly brighter */
+[data-theme="dark"] .section-title {
+  color: #f8fbff !important;
+}
+
+/* ---------- SUBTITLES (below title) ---------- */
+.section-subtitle {
+  color: var(--muted) !important;
+  font-size: 0.95rem;
+  opacity: 1 !important;
+}
+
+[data-theme="dark"] .section-subtitle {
+  color: rgba(215, 230, 255, 0.88) !important;
+}
+
+/* ---------- MINI HEADINGS (Who needs attention, etc.) ---------- */
+.section-mini-title {
+  color: var(--text) !important;
+  font-weight: 800;
+  font-size: 1.05rem;
+}
+
+[data-theme="dark"] .section-mini-title {
+  color: #f6f9ff !important;
+}
+
+/* ---------- LIST TEXT ---------- */
+.MuiListItemText-primary {
+  color: var(--text) !important;
+  opacity: 1 !important;
+  font-weight: 700 !important;
+}
+
+[data-theme="dark"] .MuiListItemText-primary {
+  color: #ffffff !important;
+}
+
+.MuiListItemText-secondary {
+  color: var(--muted) !important;
+  opacity: 0.9 !important;
+}
+
+[data-theme="dark"] .MuiListItemText-secondary {
+  color: rgba(210,220,240,0.75) !important;
+}
+
+/* ---------- ICONS ---------- */
+.section-title svg,
+.card-header svg {
+  color: var(--accent) !important;
+}
+
+[data-theme="dark"] .section-title svg {
+  color: #7cc0ff !important;
+}
+
+/* ---------- BUTTONS ---------- */
+.MuiButton-root {
+  color: var(--text) !important;
+  font-weight: 700 !important;
+}
+
+[data-theme="dark"] .MuiButton-root {
+  color: #bcdcff !important;
+}
+/* ============================================================
+   FINAL FIX PATCH — THEME SWITCH + TEXT VISIBILITY (SAFE PATCH)
+   ============================================================ */
+
+/* ---------- BASE THEME TEXT FIX ---------- */
+.section-title,
+.section-mini-title,
+.MuiListItemText-primary,
+.MuiListItemText-secondary,
+.section-subtitle {
+  color: var(--text) !important;
+}
+
+/* ---------- DARK THEME TEXT (REAL WHITE) ---------- */
+[data-theme="dark"] .section-title {
+  color: #f9fbff !important;
+}
+
+[data-theme="dark"] .section-mini-title {
+  color: #f8faff !important;
+}
+
+[data-theme="dark"] .MuiListItemText-primary {
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .MuiListItemText-secondary {
+  color: rgba(210,220,240,0.80) !important;
+}
+
+[data-theme="dark"] .section-subtitle {
+  color: rgba(215,230,255,0.88) !important;
+}
+
+/* ---------- DARK MODE CARD FIX ---------- */
+[data-theme="dark"] .glass-card {
+  background: rgba(22,22,22,0.75) !important;  /* more visible */
+  border-color: rgba(255,255,255,0.08) !important;
+}
+
+/* ---------- DARK MODE ICON FIX ---------- */
+[data-theme="dark"] .section-title svg,
+[data-theme="dark"] .card-header svg {
+  color: #7cc0ff !important;
+  filter: drop-shadow(0 0 4px rgba(125,175,255,0.25));
+}
+
+/* ---------- BUTTON FIX ---------- */
+.MuiButton-root {
+  color: var(--text) !important;
+}
+
+[data-theme="dark"] .MuiButton-root {
+  color: #cfe4ff !important; /* bright bluish white */
+}
+/* ============================================================
+   V5 ULTRA GLOW PACK
+   (Neon Glow + Gradient Text + Ambient Light Borders)
+   Safe enhancement layer for V3 Ultra
+   ============================================================ */
+
+/* ------------------------------------------------------------
+   CARD TITLES — Gradient Glow + Crisp Clarity
+   ------------------------------------------------------------ */
+.section-title {
+  background: linear-gradient(90deg, #2563eb, #10b981);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.3px;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.35));
+}
+[data-theme="dark"] .section-title {
+  background: linear-gradient(90deg, #7cc0ff, #34d399);
+  background-clip: text;
+  -webkit-background-clip: text;
+  filter: drop-shadow(0 0 6px rgba(130,180,255,0.45));
+}
+
+
+/* ------------------------------------------------------------
+   MINI TITLES — Neon Thin Edge Glow
+   ------------------------------------------------------------ */
+.section-mini-title {
+  font-weight: 800 !important;
+  color: var(--text) !important;
+  position: relative;
+}
+
+[data-theme="dark"] .section-mini-title {
+  color: #e9f5ff !important;
+  text-shadow:
+    0 0 4px rgba(120,150,255,0.35),
+    0 0 2px rgba(255,255,255,0.25);
+}
+
+/* ------------------------------------------------------------
+   GLASS CARD — Ambient Light Border (Subtle)
+   ------------------------------------------------------------ */
+.glass-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(
+    600px circle at 20% 10%,
+    rgba(37,99,235,0.14),
+    transparent 55%
+  );
+  opacity: 0.25;
+}
+
+[data-theme="dark"] .glass-card::after {
+  background: radial-gradient(
+    700px circle at 25% 15%,
+    rgba(120,180,255,0.18),
+    transparent 60%
+  );
+  opacity: 0.32;
+}
+
+/* ------------------------------------------------------------
+   BUTTONS — Glow Hover
+   ------------------------------------------------------------ */
+.MuiButton-root {
+  transition: box-shadow 280ms var(--ease), transform 220ms var(--ease);
+}
+
+.MuiButton-root:hover {
+  transform: translateY(-3px) scale(1.03);
+  box-shadow: 0 6px 24px rgba(37,99,235,0.30) !important;
+}
+
+[data-theme="dark"] .MuiButton-root:hover {
+  box-shadow: 0 6px 24px rgba(130,180,255,0.40) !important;
+}
+
+/* ------------------------------------------------------------
+   ICONS — Soft Neon Outline
+   ------------------------------------------------------------ */
+.section-title svg,
+.card-header svg {
+  filter: drop-shadow(0 0 2px rgba(37,99,235,0.3));
+}
+
+[data-theme="dark"] .section-title svg {
+  filter: drop-shadow(0 0 5px rgba(130,180,255,0.5));
+}
+
+/* ------------------------------------------------------------
+   LIST PRIMARY TEXT — Better Glow in Dark
+   ------------------------------------------------------------ */
+[data-theme="dark"] .MuiListItemText-primary {
+  color: #ffffff !important;
+  text-shadow:
+    0 0 4px rgba(140,180,255,0.25),
+    0 0 2px rgba(255,255,255,0.15);
+}
+
+/* ------------------------------------------------------------
+   LIST SECONDARY TEXT — Softer Glow
+   ------------------------------------------------------------ */
+[data-theme="dark"] .MuiListItemText-secondary {
+  color: rgba(210,225,255,0.85) !important;
+  text-shadow: 0 0 3px rgba(140,180,255,0.25);
+}
+
+/* ------------------------------------------------------------
+   DRAWER PANEL — Glowing Edge
+   ------------------------------------------------------------ */
+.drawer-panel {
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  box-shadow:
+    0 20px 60px rgba(0,0,0,0.6),
+    0 0 18px rgba(37,99,235,0.25);
+}
+
+[data-theme="dark"] .drawer-panel {
+  box-shadow:
+    0 20px 60px rgba(0,0,0,0.78),
+    0 0 24px rgba(120,180,255,0.35);
+}
+/* ============================================================
+   GLOBAL TEXT FIX FOR CARD CONTENT (Light & Dark theme)
+   ============================================================ */
+
+   /* ============================================================
+   GLOBAL CARD TEXT FIX (Final Stable Patch)
+   Ensures perfect text visibility in both themes
+   ============================================================ */
+
+/* ---------- LIGHT THEME (default) ---------- */
+.glass-card,
+.glass-card * {
+  color: var(--text) !important;        /* dark readable text */
+}
+
+.glass-card .MuiListItemText-secondary,
+.glass-card .secondary-text {
+  color: var(--muted) !important;
+  opacity: 0.9 !important;
+}
+
+/* ---------- DARK THEME ---------- */
+[data-theme="dark"] .glass-card,
+[data-theme="dark"] .glass-card * {
+  color: #f9fbff !important;           /* true bright white for all text */
+}
+
+[data-theme="dark"] .glass-card .MuiListItemText-secondary,
+[data-theme="dark"] .glass-card .secondary-text {
+  color: rgba(210, 225, 255, 0.82) !important; /* soft white */
+}
+
+/* ---------- ICONS INSIDE CARDS ---------- */
+[data-theme="dark"] .glass-card svg {
+  color: #dff1ff !important;
+}
+
+/* ---------- Preserve Gradient Titles (do NOT override) ---------- */
+.glass-card .section-title {
+  color: inherit !important;           /* allow gradient text to show */
+}
+[data-theme="dark"] .glass-card .section-title {
+  color: inherit !important;
+}
+/* ============================================================
+   FINAL DARK MODE PALETTE (White / Pale Yellow / Light Blue)
+   Clean, conflict-free, ONLY inside .glass-card
+   ============================================================ */
+
+:root {
+  --dark-heading: #ffffff;     /* pure white */
+  --dark-subheading: #F9EFA7;  /* pale yellow */
+  --dark-primary: #CFE4FF;     /* bright light blue */
+  --dark-secondary: #AFCBFF;   /* soft blue */
+}
+
+/* ============================================================
+   1) SECTION TITLES (GRADIENT) – DO NOT MODIFY COLOR
+   ============================================================ */
+[data-theme="dark"] .glass-card .section-title {
+  color: inherit !important;           /* keep gradient */
+  -webkit-text-fill-color: initial !important;
+}
+
+/* ============================================================
+   2) HEADINGS (H1/H2/H3) INSIDE CARDS
+   ============================================================ */
+[data-theme="dark"] .glass-card h1:not(.section-title),
+[data-theme="dark"] .glass-card h2:not(.section-title),
+[data-theme="dark"] .glass-card h3:not(.section-title) {
+  color: var(--dark-heading) !important;
+}
+
+/* ============================================================
+   3) SUBHEADINGS (pale yellow)
+   ============================================================ */
+[data-theme="dark"] .glass-card .section-subtitle,
+[data-theme="dark"] .glass-card .section-mini-title {
+  color: var(--dark-subheading) !important;
+}
+
+/* ============================================================
+   4) PRIMARY TEXT (light blue)
+   ============================================================ */
+[data-theme="dark"] .glass-card .MuiListItemText-primary,
+[data-theme="dark"] .glass-card p,
+[data-theme="dark"] .glass-card .primary-text,
+[data-theme="dark"] .glass-card span {
+  color: var(--dark-primary) !important;
+}
+
+/* ============================================================
+   5) SECONDARY TEXT (soft blue)
+   ============================================================ */
+[data-theme="dark"] .glass-card .MuiListItemText-secondary,
+[data-theme="dark"] .glass-card .secondary-text {
+  color: var(--dark-secondary) !important;
+}
+
+/* ============================================================
+   6) ICONS inside cards → pure white
+   ============================================================ */
+[data-theme="dark"] .glass-card svg {
+  color: var(--dark-heading) !important;
+  stroke: var(--dark-heading) !important;
+}
+
+/* ============================================================
+   7) BADGE/TAGS COLORS INSIDE CARDS
+   ============================================================ */
+[data-theme="dark"] .glass-card .MuiChip-label {
+  color: var(--dark-primary) !important;
+}
+/* --- delete animation & spacing --- */
+.MuiListItem-root .MuiSvgIcon-root,
+.MuiListItem-root .lucide-icon {
+  vertical-align: middle;
+}
+
+/* Add spacing for action icons in list items */
+.MuiListItem-root > .MuiIconButton-root {
+  margin-left: 8px;
+}
+
+/* deleting animation (fade + slide out) */
+.deleting {
+  opacity: 0.28 !important;
+  transform: translateX(-12px) scale(0.98) !important;
+  transition: opacity 360ms cubic-bezier(.16,.84,.32,1), transform 360ms cubic-bezier(.16,.84,.32,1);
+}
+
+/* Slight hover effect for delete button to make it stand out */
+.MuiIconButton-root[aria-label="delete member"] {
+  color: rgba(220, 60, 60, 0.9);
+  transition: transform 160ms ease, color 160ms ease;
+}
+.MuiIconButton-root[aria-label="delete member"]:hover {
+  transform: translateY(-3px);
+  color: rgb(255, 90, 90);
+}

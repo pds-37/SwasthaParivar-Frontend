@@ -1,0 +1,332 @@
+/* ===========================
+   PREMIUM HEALTH MONITOR CSS
+   =========================== */
+
+:root {
+  --bg: #f7f9fc;
+  --card-bg: #ffffff;
+  --border: #e5e7eb;
+  --text: #111827;
+  --text-muted: #6b7280;
+  --primary: #2563eb;
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  --radius: 16px;
+}
+
+/* Light / Dark support */
+.hm-page.dark {
+  --bg: #0d1117;
+  --card-bg: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.hm-page {
+  background: var(--bg);
+  min-height: 100vh;
+  padding: 2rem;
+  transition: background 0.3s;
+}
+
+/* ===========================
+   TOP BAR
+   =========================== */
+.hm-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2.5rem;
+}
+
+.hm-title {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.hm-title h1 {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.muted {
+  color: var(--text-muted);
+}
+
+/* ===========================
+   DROPDOWN + BUTTON
+   =========================== */
+.hm-controls {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.member-select {
+  padding: 0.6rem 1rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text);
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: border 0.2s;
+}
+
+.member-select:hover {
+  border-color: var(--primary);
+}
+
+.btn {
+  padding: 0.6rem 1rem;
+  border-radius: var(--radius);
+  background: var(--border);
+  border: none;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: 0.2s;
+}
+
+.btn.primary {
+  background: var(--primary);
+  color: white;
+}
+
+.btn.primary:hover {
+  opacity: 0.9;
+}
+
+/* ===========================
+   METRIC CARDS
+   =========================== */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.4rem;
+  margin-bottom: 2rem;
+}
+
+.metric-card {
+  background: var(--card-bg);
+  padding: 1.4rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  transition: transform 0.2s ease;
+}
+
+.metric-card:hover {
+  transform: translateY(-4px);
+}
+
+.metric-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.metric-title {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.metric-icon {
+  padding: 0.45rem;
+  border-radius: 10px;
+}
+
+.metric-body {
+  margin-top: 1rem;
+}
+
+.metric-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.metric-unit {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.metric-meta small {
+  font-size: 0.8rem;
+}
+
+/* ===========================
+   GRID LAYOUT
+   =========================== */
+.hm-main-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1.4rem;
+}
+
+.card {
+  background: var(--card-bg);
+  padding: 1.5rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+.chart-area {
+  height: 220px;
+  background: linear-gradient(to bottom right, rgba(37, 99, 235, 0.1), rgba(137, 207, 240, 0.1));
+  border-radius: var(--radius);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.empty-chart {
+  color: var(--text-muted);
+}
+
+.snapshots h3 {
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  color: var(--text);
+}
+
+.snapshot-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.snapshot-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.8rem 1rem;
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  transition: 0.2s;
+}
+
+.snapshot-row:hover {
+  background: rgba(37, 99, 235, 0.08);
+}
+
+.snapshot-actions {
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
+}
+
+.link {
+  color: var(--primary);
+  cursor: pointer;
+  font-size: 0.85rem;
+  border: none;
+  background: none;
+}
+
+.link.danger {
+  color: #dc2626;
+}
+
+/* ===========================
+   RIGHT COLUMN
+   =========================== */
+.insights {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.ins-item {
+  background: rgba(37, 99, 235, 0.08);
+  padding: 0.6rem;
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+.quick-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 1rem;
+}
+
+.quick-item {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.qi-left {
+  padding: 0.7rem;
+  border-radius: 50%;
+}
+
+.qi-val {
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+/* ===========================
+   MODAL
+   =========================== */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.modal {
+  max-width: 650px;
+  width: 95%;
+  animation: pop 0.25s ease;
+}
+
+@keyframes pop {
+  0% { transform: scale(0.8); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.form-item input,
+.modal input[type="datetime-local"] {
+  width: 100%;
+  padding: 0.6rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text);
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+/* ===========================
+   RESPONSIVE
+   =========================== */
+@media (max-width: 900px) {
+  .hm-main-grid {
+    grid-template-columns: 1fr;
+  }
+}
