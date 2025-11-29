@@ -8,7 +8,7 @@ import { AuthProvider, useAuth } from "./components/AuthProvider";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import HealthMonitor from "./pages/HealthMonitor";
-import Remedies from "./pages/remedies";
+import Remedies from "./pages/remedies.jsx";
 import AIChat from "./pages/AIChat";
 import Reminders from "./pages/Reminders";
 
