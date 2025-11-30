@@ -75,9 +75,12 @@ export default function AIChat({ token = null, userFamily = [] }) {
   const pendingRequestRef = useRef(null);
 
   // constants - endpoints expected on backend
-  const AI_CHAT_ENDPOINT = "/api/ai"; // POST { message, member } -> { reply: "..." }
-  const AI_MEMORY_ENDPOINT = "/api/ai/memory"; // GET ?member=X  POST { member, messages }
-  const AI_ATTACH_ENDPOINT = "/api/ai/attachments"; // POST multipart
+  // ---- FIXED ENDPOINTS (backend hosted on Render) ----
+const BASE = import.meta.env.VITE_API_URL || "https://swasthaparivar-backend-v3.onrender.com/api";
+
+const AI_CHAT_ENDPOINT = `${BASE}/ai`;
+const AI_MEMORY_ENDPOINT = `${BASE}/ai/memory`;
+const AI_ATTACH_ENDPOINT = `${BASE}/ai/attachments`;
 
   // -------- Load memory (backend first, fallback localStorage)
   useEffect(() => {
