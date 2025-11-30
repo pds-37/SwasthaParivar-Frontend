@@ -1,14 +1,14 @@
-import React, { useState, useEffect, useRef } from "react";
+// AIChat.jsx
+import React, { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import EmojiPicker from "emoji-picker-react";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
-import { sendToAI } from "../api/ai"; // your existing api wrapper
+// optional helper - if you have a wrapper, import it; otherwise we fallback to fetch
+// import { sendToAI } from "../api/ai";
 
-// ---------------------------
-// Suggested Qs (you already had these)
-const suggestedQs = [
+const SUGGESTED = [
   "What checkups should a 60-year-old have?",
   "Vaccination reminders for a 5-year-old",
   "Home remedies for common cold",
@@ -16,21 +16,20 @@ const suggestedQs = [
   "How often should I get a dental check-up?",
 ];
 
-// ---------------------------
-// Utility: inject minimal CSS for component (keeps file self-contained)
+// minimal injected styles so the file is drop-in
 const injectStyles = () => {
   if (document.getElementById("aichat-styles")) return;
   const style = document.createElement("style");
   style.id = "aichat-styles";
   style.innerHTML = `
   .aichat-root { display:flex; flex-direction:column; height:100vh; font-family: Inter, system-ui, sans-serif; }
-  .aichat-header { padding:16px; color:white; background:linear-gradient(90deg,#0ea5e9,#10b981); display:flex; flex-direction:column; gap:8px; }
+  .aichat-header { padding:14px; color:white; background:linear-gradient(90deg,#0ea5e9,#10b981); display:flex; flex-direction:column; gap:8px; }
   .aichat-header-row { display:flex; gap:8px; align-items:center; }
   .aichat-suggests { margin-top:8px; display:flex; gap:8px; flex-wrap:wrap; }
   .chip { padding:6px 12px; border-radius:20px; background:rgba(255,255,255,0.18); cursor:pointer; font-size:13px; }
   .aichat-body { flex:1; overflow:hidden; display:flex; flex-direction:column; background: var(--bg, #f7fbfd); }
   .messages-wrap { flex:1; overflow-y:auto; padding:20px; }
-  .bubble { max-width:72%; padding:12px 16px; border-radius:12px; margin-bottom:12px; white-space:pre-wrap; word-break:break-word; overflow-wrap:anywhere; line-height:1.5; }
+  .bubble { max-width:72%; padding:12px 16px; border-radius:12px; margin-bottom:12px; white-space:pre-wrap; word-break:break-word; overflow-wrap:anywhere; line-height:1.5; box-shadow: 0 1px 0 rgba(12,17,23,0.03); }
   .bubble.ai { background: #f1f5f9; color:#0f172a; border-left:4px solid #3b82f6; }
   .bubble.user { background:#2563eb; color:#fff; margin-left:auto; }
   .typing { width:70px; height:28px; display:flex; gap:6px; align-items:center; }
@@ -38,25 +37,24 @@ const injectStyles = () => {
   .dot:nth-child(2){ animation-delay:0.15s } .dot:nth-child(3){ animation-delay:0.3s }
   @keyframes blink { 0%,100%{opacity:0.2} 50%{opacity:1} }
   .aichat-inputbar { display:flex; gap:8px; align-items:center; padding:12px; border-top:1px solid #e6eef6; background:var(--input-bg,#fff) }
-  .aichat-input { flex:1; padding:12px; border-radius:10px; border:1px solid #cbd5e1; }
+  .aichat-input { flex:1; padding:12px; border-radius:10px; border:1px solid #cbd5e1; min-height:44px; }
   .icon-btn { padding:8px 10px; border-radius:10px; background:#f1f5f9; cursor:pointer; border:none; }
   .dark .aichat-header { background:linear-gradient(90deg,#0f172a,#064e3b); }
   .dark .aichat-body { --bg: #041025; --input-bg:#06202b; color:#e6f0f7 }
   .dark .bubble.ai { background:#06202b; color:#dbeafe; border-left-color:#06b6d4; }
   .dark .bubble.user { background:#2563eb; color:#fff; }
   .warning-box { border-left:4px solid #ef4444; background:rgba(254,226,226,0.6); padding:10px 12px; border-radius:8px; color:#7f1d1d; margin:8px 0; }
-  .new-msg-btn { position:fixed; right:24px; bottom:100px; background:#ef4444; color:white; padding:8px 12px; border-radius:8px; cursor:pointer; box-shadow:0 6px 18px rgba(0,0,0,0.15); }
+  .new-msg-btn { position:fixed; right:24px; bottom:120px; background:#ef4444; color:white; padding:8px 12px; border-radius:8px; cursor:pointer; box-shadow:0 6px 18px rgba(0,0,0,0.15); }
   .attachment-preview { max-width:120px; max-height:90px; object-fit:cover; border-radius:8px; margin-right:8px; border:1px solid #e2e8f0; }
   .small-muted { font-size:12px; color:#64748b; }
   `;
   document.head.appendChild(style);
 };
 
-// ---------------------------
-// Component
-export default function AIChat({ token, userFamily = [] }) {
+export default function AIChat({ token = null, userFamily = [] }) {
   useEffect(() => injectStyles(), []);
 
+  // state
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [search, setSearch] = useState("");
@@ -67,19 +65,29 @@ export default function AIChat({ token, userFamily = [] }) {
   const [darkMode, setDarkMode] = useState(localStorage.getItem("aichat-dark") === "1");
   const [attachmentPreview, setAttachmentPreview] = useState(null);
   const [newMessagesAvailable, setNewMessagesAvailable] = useState(false);
+  const [lastError, setLastError] = useState(null);
 
-  const recognitionRef = useRef(null);
-  const scrollContainerRef = useRef(null);
-  const userAtBottomRef = useRef(true);
+  // refs
   const mountedRef = useRef(false);
+  const scrollRef = useRef(null);
+  const recognitionRef = useRef(null);
+  const userAtBottomRef = useRef(true);
+  const pendingRequestRef = useRef(null);
 
-  // --- Load memory (backend first, fallback localStorage)
+  // constants - endpoints expected on backend
+  const AI_CHAT_ENDPOINT = "/api/ai"; // POST { message, member } -> { reply: "..." }
+  const AI_MEMORY_ENDPOINT = "/api/ai/memory"; // GET ?member=X  POST { member, messages }
+  const AI_ATTACH_ENDPOINT = "/api/ai/attachments"; // POST multipart
+
+  // -------- Load memory (backend first, fallback localStorage)
   useEffect(() => {
     mountedRef.current = true;
     const load = async () => {
-      // Try backend memory (if backend implemented)
+      setLastError(null);
+      // try backend memory
       try {
-        const res = await fetch(`/api/ai/memory?member=${encodeURIComponent(selectedMember)}`, {
+        const url = `${AI_MEMORY_ENDPOINT}?member=${encodeURIComponent(selectedMember)}`;
+        const res = await fetch(url, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
@@ -93,29 +101,25 @@ export default function AIChat({ token, userFamily = [] }) {
             setMessages(data.messages);
             return;
           }
-        } else if (res.status !== 404) {
-          // if not 404 (not found) and not ok, throw so we fallback to local storage
-          // 401 will also be handled below
-          if (res.status === 401) {
-            setMessages([{ sender: "ai", text: "Unauthorized — please login to use AI features.", ts: Date.now() }]);
-            return;
-          }
+        } else if (res.status === 401) {
+          setMessages([{ sender: "ai", text: "Unauthorized — please login to use AI features.", ts: Date.now() }]);
+          return;
         }
+        // if 404 or empty -> fallback to local storage below
       } catch (err) {
-        // backend unreachable or other error -> fallback to localStorage
+        // network error -> fallback
       }
 
-      // fallback: localStorage memory keyed by member
-      const key = `aichat_mem_${selectedMember}`;
-      const raw = localStorage.getItem(key);
-      if (raw) {
-        try {
+      // localStorage fallback
+      try {
+        const raw = localStorage.getItem(`aichat_mem_${selectedMember}`);
+        if (raw) {
           setMessages(JSON.parse(raw));
           return;
-        } catch {}
-      }
+        }
+      } catch (err) {}
 
-      // if nothing, set initial system message
+      // default starter message
       setMessages([
         {
           sender: "ai",
@@ -133,13 +137,13 @@ export default function AIChat({ token, userFamily = [] }) {
     };
   }, [selectedMember, token]);
 
-  // --- Save memory (attempt backend; fallback localStorage)
+  // -------- Save memory (debounced) - attempt backend, fallback to localStorage
   useEffect(() => {
     if (!mountedRef.current) return;
-    const save = async () => {
+    const t = setTimeout(async () => {
       const payload = { member: selectedMember, messages };
       try {
-        await fetch("/api/ai/memory", {
+        await fetch(AI_MEMORY_ENDPOINT, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -148,17 +152,15 @@ export default function AIChat({ token, userFamily = [] }) {
           body: JSON.stringify(payload),
         });
       } catch (err) {
-        // fallback localStorage
         try {
           localStorage.setItem(`aichat_mem_${selectedMember}`, JSON.stringify(messages));
         } catch {}
       }
-    };
-    const t = setTimeout(save, 800);
+    }, 800);
     return () => clearTimeout(t);
   }, [messages, selectedMember, token]);
 
-  // dark mode apply
+  // dark mode
   useEffect(() => {
     document.body.classList.toggle("dark", darkMode);
     localStorage.setItem("aichat-dark", darkMode ? "1" : "0");
@@ -166,7 +168,7 @@ export default function AIChat({ token, userFamily = [] }) {
 
   // scroll detection
   useEffect(() => {
-    const sc = scrollContainerRef.current;
+    const sc = scrollRef.current;
     if (!sc) return;
     const onScroll = () => {
       const threshold = 160;
@@ -179,9 +181,9 @@ export default function AIChat({ token, userFamily = [] }) {
     return () => sc.removeEventListener("scroll", onScroll);
   }, []);
 
-  // auto scroll or show indicator
+  // auto scroll or show new message indicator
   useEffect(() => {
-    const sc = scrollContainerRef.current;
+    const sc = scrollRef.current;
     if (!sc) return;
     if (userAtBottomRef.current) {
       sc.scrollTo({ top: sc.scrollHeight, behavior: "smooth" });
@@ -190,7 +192,7 @@ export default function AIChat({ token, userFamily = [] }) {
     }
   }, [messages]);
 
-  // speech
+  // voice control
   const startRecording = () => {
     if (!("webkitSpeechRecognition" in window || "SpeechRecognition" in window)) {
       alert("Speech recognition not supported in this browser.");
@@ -219,7 +221,7 @@ export default function AIChat({ token, userFamily = [] }) {
 
   // attachments
   const onFileChange = (ev) => {
-    const f = ev.target.files[0];
+    const f = ev.target.files?.[0];
     if (!f) return;
     const url = URL.createObjectURL(f);
     setAttachmentPreview({ url, file: f });
@@ -227,15 +229,12 @@ export default function AIChat({ token, userFamily = [] }) {
 
   const sendAttachment = async () => {
     if (!attachmentPreview?.file) return;
-    setMessages((prev) => [
-      ...prev,
-      { sender: "user", text: `📷 Sent an image`, ts: Date.now(), attachment: attachmentPreview.url },
-    ]);
+    setMessages((prev) => [...prev, { sender: "user", text: `📷 Sent an image`, ts: Date.now(), attachment: attachmentPreview.url }]);
     const fd = new FormData();
     fd.append("file", attachmentPreview.file);
     fd.append("member", selectedMember);
     try {
-      const resp = await fetch("/api/ai/attachments", {
+      const res = await fetch(AI_ATTACH_ENDPOINT, {
         method: "POST",
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -243,13 +242,13 @@ export default function AIChat({ token, userFamily = [] }) {
         body: fd,
       });
 
-      if (resp.status === 401) {
+      if (res.status === 401) {
         setMessages((prev) => [...prev, { sender: "ai", text: "Unauthorized — please login to upload attachments.", ts: Date.now() }]);
         return;
       }
 
-      if (!resp.ok) throw new Error("Upload failed");
-      const data = await resp.json();
+      if (!res.ok) throw new Error("Upload failed");
+      const data = await res.json();
       if (data?.reply) {
         setMessages((prev) => [...prev, { sender: "ai", text: data.reply, ts: Date.now() }]);
       } else {
@@ -262,99 +261,7 @@ export default function AIChat({ token, userFamily = [] }) {
     }
   };
 
-  // ---------------------------
-  // Send message flow with typing indicator / backend call
-  const handleSend = async (txt = null) => {
-    const messageText = (txt ?? input).trim();
-    if (!messageText) return;
-
-    const userMsg = { sender: "user", text: messageText, ts: Date.now() };
-    setMessages((prev) => [...prev, userMsg]);
-
-    setInput("");
-    setShowEmojiPicker(false);
-    setIsTyping(true);
-
-    const payload = { message: messageText, member: selectedMember };
-
-    try {
-      // Try sendToAI helper first (ensure it accepts token); fallback to fetch with token
-      let responseObj = null;
-
-      try {
-        if (typeof sendToAI === "function") {
-          // assume sendToAI(message, token, extras) -> returns object
-          responseObj = await sendToAI(messageText, token, { member: selectedMember });
-        }
-      } catch (err) {
-        // ignore -> fallback to raw fetch
-      }
-
-      if (!responseObj) {
-        const r = await fetch("/api/ai/chat", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify(payload),
-        });
-
-        if (r.status === 401) {
-          // Show friendly unauthorized msg and stop
-          setIsTyping(false);
-          setMessages((prev) => [...prev, { sender: "ai", text: "Unauthorized — please login to use AI features.", ts: Date.now() }]);
-          return;
-        }
-
-        if (!r.ok) {
-          const txt = await r.text().catch(() => "");
-          setIsTyping(false);
-          setMessages((prev) => [...prev, { sender: "ai", text: `⚠️ Server error: ${r.status} ${r.statusText}\n${txt}`, ts: Date.now() }]);
-          return;
-        }
-
-        try {
-          responseObj = await r.json();
-        } catch (err) {
-          // if server returned plain text
-          const txt = await r.text();
-          responseObj = { reply: txt };
-        }
-      }
-
-      // Expected server reply fields: reply | text | message
-      let reply = (responseObj && (responseObj.reply || responseObj.text || responseObj.message)) || "Sorry, no response.";
-
-      // If server returns JSON-string we try to format (but aiController should return Markdown)
-      try {
-        const parsed = JSON.parse(reply);
-        if (parsed?.title) {
-          reply = `## ${parsed.title}\n\n${parsed.summary || ""}\n\n${(parsed.points || []).map((p) => `- ${p}`).join("\n")}\n\n> ⚠️ ${parsed.note || ""}`;
-        }
-      } catch {}
-
-      // push AI reply with slight delay to feel natural
-      setTimeout(() => {
-        setMessages((prev) => [...prev, { sender: "ai", text: reply, ts: Date.now() }]);
-        setIsTyping(false);
-      }, 400 + Math.random() * 700);
-    } catch (err) {
-      setIsTyping(false);
-      setMessages((prev) => [...prev, { sender: "ai", text: "⚠️ Sorry — I couldn't reach the server right now.", ts: Date.now() }]);
-    }
-  };
-
-  // quick send when clicking chips
-  const handleChipSend = (q) => {
-    setInput(q);
-    setTimeout(() => handleSend(q), 100);
-  };
-
-  const onEmojiSelect = (ev, emojiObj) => {
-    setInput((p) => p + emojiObj.emoji);
-  };
-
+  // export chat to PDF
   const exportToPDF = () => {
     const doc = new jsPDF({ unit: "pt", format: "a4" });
     const margin = 40;
@@ -379,8 +286,94 @@ export default function AIChat({ token, userFamily = [] }) {
     doc.save("chat.pdf");
   };
 
+  // core send flow (uses AI_CHAT_ENDPOINT)
+  const handleSend = async (overrideText = null) => {
+    const messageText = ((overrideText ?? input) || "").trim();
+    if (!messageText) return;
+    // push user message immediately
+    const userMsg = { sender: "user", text: messageText, ts: Date.now() };
+    setMessages((prev) => [...prev, userMsg]);
+    setInput("");
+    setShowEmojiPicker(false);
+    setIsTyping(true);
+    setLastError(null);
+
+    const payload = { message: messageText, member: selectedMember };
+
+    // abort previous request if any
+    if (pendingRequestRef.current?.abort) pendingRequestRef.current.abort();
+
+    const controller = new AbortController();
+    pendingRequestRef.current = controller;
+
+    try {
+      // Optional: if you have a local wrapper function like sendToAI, try it:
+      // let responseObj = null;
+      // try { responseObj = await sendToAI(messageText, token, { member: selectedMember }); } catch(e) {}
+      // if (!responseObj) { ...fetch fallback below... }
+
+      const res = await fetch(AI_CHAT_ENDPOINT, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
+
+      if (res.status === 401) {
+        setMessages((prev) => [...prev, { sender: "ai", text: "Unauthorized — please login to use AI features.", ts: Date.now() }]);
+        setIsTyping(false);
+        return;
+      }
+
+      if (!res.ok) {
+        // try to get text body to show to the user
+        let body = "";
+        try { body = await res.text(); } catch {}
+        setMessages((prev) => [...prev, { sender: "ai", text: `⚠️ Server error: ${res.status} ${res.statusText}\n${body}`, ts: Date.now() }]);
+        setIsTyping(false);
+        setLastError(`Server returned ${res.status}`);
+        return;
+      }
+
+      let parsed;
+      try { parsed = await res.json(); } catch (e) { parsed = { reply: await res.text() }; }
+
+      const reply = (parsed && (parsed.reply || parsed.text || parsed.message)) || "Sorry, no response.";
+      // push AI reply with small natural delay
+      setTimeout(() => {
+        if (!mountedRef.current) return;
+        setMessages((prev) => [...prev, { sender: "ai", text: String(reply), ts: Date.now() }]);
+        setIsTyping(false);
+      }, 350 + Math.random() * 800);
+    } catch (err) {
+      if (err.name === "AbortError") {
+        // cancelled - ignore
+        setIsTyping(false);
+      } else {
+        setIsTyping(false);
+        setMessages((prev) => [...prev, { sender: "ai", text: "⚠️ Sorry — I couldn't reach the server right now.", ts: Date.now() }]);
+        setLastError(err.message || "Network error");
+      }
+    } finally {
+      pendingRequestRef.current = null;
+    }
+  };
+
+  // quick chip send
+  const handleChipSend = (q) => {
+    setInput(q);
+    setTimeout(() => handleSend(q), 120);
+  };
+
+  const onEmojiSelect = (ev, obj) => setInput((p) => p + (obj?.emoji || ""));
+
+  // filtered view by search
   const filtered = messages.filter((m) => m.text.toLowerCase().includes(search.toLowerCase()));
 
+  // markdown small enhancements
   const mdComponents = {
     p: ({ node, children }) => {
       const txt = String(children).trim().toLowerCase();
@@ -392,8 +385,7 @@ export default function AIChat({ token, userFamily = [] }) {
   };
 
   return (
-    <div className="aichat-root" style={{ background: darkMode ? "#031324" : "#fff" }}>
-      {/* HEADER */}
+    <div className="aichat-root">
       <div className="aichat-header">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
@@ -402,21 +394,13 @@ export default function AIChat({ token, userFamily = [] }) {
           </div>
 
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <input
-              placeholder="Search chat..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              style={{ padding: 8, borderRadius: 8, border: "none", minWidth: 220 }}
-            />
-            <button className="icon-btn" onClick={() => setMessages([])}>Clear</button>
+            <input placeholder="Search chat..." value={search} onChange={(e) => setSearch(e.target.value)} style={{ padding: 8, borderRadius: 8, border: "none", minWidth: 220 }} />
+            <button className="icon-btn" onClick={() => { setMessages([]); localStorage.removeItem(`aichat_mem_${selectedMember}`); }}>Clear</button>
             <button className="icon-btn" onClick={exportToPDF}>Export</button>
-            <select
-              value={selectedMember}
-              onChange={(e) => setSelectedMember(e.target.value)}
-              style={{ padding: 8, borderRadius: 8 }}
-            >
+
+            <select value={selectedMember} onChange={(e) => setSelectedMember(e.target.value)} style={{ padding: 8, borderRadius: 8 }}>
               <option value="Self">Self</option>
-              {userFamily.map((m) => <option key={m._id} value={m.name}>{m.name}</option>)}
+              {userFamily.map((m) => <option key={m._id || m.name} value={m.name}>{m.name}</option>)}
             </select>
 
             <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -427,15 +411,12 @@ export default function AIChat({ token, userFamily = [] }) {
         </div>
 
         <div className="aichat-suggests">
-          {suggestedQs.map((q) => (
-            <div key={q} className="chip" onClick={() => handleChipSend(q)}>{q}</div>
-          ))}
+          {SUGGESTED.map((q) => <div key={q} className="chip" onClick={() => handleChipSend(q)}>{q}</div>)}
         </div>
       </div>
 
-      {/* BODY */}
-      <div className="aichat-body">
-        <div className="messages-wrap" ref={scrollContainerRef}>
+      <div className="aichat-body" style={{ background: darkMode ? "#031324" : "#fff" }}>
+        <div className="messages-wrap" ref={scrollRef}>
           {filtered.map((m, i) => (
             <div key={i} style={{ display: "flex", justifyContent: m.sender === "user" ? "flex-end" : "flex-start" }}>
               <div className={`bubble ${m.sender === "user" ? "user" : "ai"}`} style={{ maxWidth: "78%" }}>
@@ -457,11 +438,17 @@ export default function AIChat({ token, userFamily = [] }) {
               </div>
             </div>
           )}
+
+          {lastError && (
+            <div style={{ padding: 12 }}>
+              <div className="warning-box">Connection problem: {String(lastError)}</div>
+            </div>
+          )}
         </div>
 
         {newMessagesAvailable && (
           <div className="new-msg-btn" onClick={() => {
-            const sc = scrollContainerRef.current;
+            const sc = scrollRef.current;
             sc?.scrollTo({ top: sc.scrollHeight, behavior: "smooth" });
             setNewMessagesAvailable(false);
           }}>
@@ -480,7 +467,6 @@ export default function AIChat({ token, userFamily = [] }) {
         )}
       </div>
 
-      {/* INPUT BAR */}
       <div className="aichat-inputbar">
         <input type="file" accept="image/*" onChange={onFileChange} style={{ display: "none" }} id="aichat-file" />
         <label htmlFor="aichat-file" className="icon-btn" title="Attach image">📷</label>
@@ -498,13 +484,7 @@ export default function AIChat({ token, userFamily = [] }) {
           )}
         </div>
 
-        <input
-          className="aichat-input"
-          placeholder="Ask something..."
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-        />
+        <input className="aichat-input" placeholder="Ask something..." value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }} />
 
         <button style={{ background: "#2563eb", color: "#fff", borderRadius: 10, padding: "10px 16px", border: "none" }} onClick={() => handleSend()}>
           Send
